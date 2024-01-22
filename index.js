@@ -12,6 +12,8 @@ app.use(express.json())
 //hzWSRlIt0p80K7sK
 
 
+// backend link :   https://translator-delta-server.vercel.app/nodem
+
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://delta-translator:hzWSRlIt0p80K7sK@cluster0.gspqc3c.mongodb.net/?retryWrites=true&w=majority";
 
