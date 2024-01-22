@@ -11,9 +11,17 @@ app.use(express.json());
 // delta-translator
 //hzWSRlIt0p80K7sK+
 
+<<<<<<< HEAD
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri =
   "mongodb+srv://delta-translator:hzWSRlIt0p80K7sK@cluster0.gspqc3c.mongodb.net/?retryWrites=true&w=majority";
+=======
+
+// backend link :   https://translator-delta-server.vercel.app/nodem
+
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongodb+srv://delta-translator:hzWSRlIt0p80K7sK@cluster0.gspqc3c.mongodb.net/?retryWrites=true&w=majority";
+>>>>>>> 1ff046896aee1065e392fac30f891136b03aec4a
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
