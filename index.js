@@ -27,17 +27,66 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-  // const descCollection = client.db("contactForm").collection("desc");
-
-  // app.post("/add-des", async (req, res) => {
-  //   const desc = req.body;
-  //   const result = await descCollection.insertOne(desc);
-  //   res.send(result);
-  // });
-
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
+
+    const deltaTranslateDB = client.db("deltaTranslateDB");
+    const translationHistoryCollection = deltaTranslateDB.collection(
+      "translationHistoryCollection"
+    );
+
+    app.get("/translation-history/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+
+      const result = await translationHistoryCollection.findOne(query);
+
+      // const result = userHistory.translationHistory;
+      res.send(result);
+    });
+
+    app.put("/translation-history/:email", async (req, res) => {
+      const email = req.params.email;
+      const updatedTranslationHistory = req.body;
+
+      console.log("hello");
+
+      const filter = { userEmail: email };
+      const existingUser = await translationHistoryCollection.findOne(filter);
+
+      console.log(existingUser);
+
+      if (existingUser) {
+        let tempHistory = [...existingUser.translationHistory];
+        tempHistory.unshift(updatedTranslationHistory.translationHistory[0]);
+
+        if (updatedTranslationHistory.translationHistory.length > 50) {
+          tempHistory = tempHistory.slice(0, 20);
+        }
+
+        console.log(tempHistory);
+
+        const options = { upsert: true };
+        const updatedDoc = {
+          $set: {
+            translationHistory: tempHistory,
+          },
+        };
+        const updateResult = await translationHistoryCollection.updateOne(
+          filter,
+          updatedDoc,
+          options
+        );
+        res.send(updateResult);
+      } else {
+        const insertResult = await translationHistoryCollection.insertOne(
+          updatedTranslationHistory
+        );
+        res.send(insertResult);
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
