@@ -27,6 +27,14 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
+  // const descCollection = client.db("contactForm").collection("desc");
+
+  // app.post("/add-des", async (req, res) => {
+  //   const desc = req.body;
+  //   const result = await descCollection.insertOne(desc);
+  //   res.send(result);
+  // });
+
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
