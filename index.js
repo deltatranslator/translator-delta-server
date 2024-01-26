@@ -1,17 +1,25 @@
 const express = require("express");
 const app = express();
-const dotenv = require("dotenv");
+require("dotenv").config();
 const cors = require("cors");
 
 const port = process.env.PORT || 5001;
 
-app.use(cors());
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://delta-translator-ac8d6.web.app",
+  ],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // delta-translator
 //hzWSRlIt0p80K7sK+
 
-// backend link :   https://translator-delta-server.vercel.app/nodem
+// backend link :   https://translator-delta-server.vercel.app/
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri =
@@ -35,6 +43,7 @@ async function run() {
     const translationHistoryCollection = deltaTranslateDB.collection(
       "translationHistoryCollection"
     );
+    const usersCollection = client.db("deltaTranslateDB").collection("users");
 
     app.get("/translation-history/:email", async (req, res) => {
       const email = req.params.email;
@@ -84,6 +93,24 @@ async function run() {
           updatedTranslationHistory
         );
         res.send(insertResult);
+      }
+    });
+
+    // users api
+    app.post("/users", async (req, res) => {
+      try {
+        const user = req.body;
+        //inserted email if user does not exists:
+        //you can do this many ways (1.email unique , 2.upsert , 3.simple checking)
+        const query = { email: user.email };
+        const existingUser = await usersCollection.findOne(query);
+        if (existingUser) {
+          return res.send({ message: "user already exist", insertedId: null });
+        }
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+      } catch {
+        (error) => console.log(error);
       }
     });
 
