@@ -106,7 +106,12 @@ async function run() {
 
     // favorite History API
 
-    app.get("/favoriteHistory/");
+    app.get("/favoriteHistory", async (req, res) => {
+      const email = req.query.userEmail;
+      const query = { userEmail: email };
+      const result = await favoriteHistoryCollection.findOne(query);
+      res.send(result);
+    });
 
     app.put("/favoriteHistory/:status", async (req, res) => {
       try {
