@@ -104,6 +104,13 @@ async function run() {
       }
     });
 
+    app.delete("/translation-history/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await translationHistoryCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // favorite History API
 
     app.get("/favoriteHistory", async (req, res) => {
