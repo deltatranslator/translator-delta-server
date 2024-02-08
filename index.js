@@ -43,9 +43,9 @@ async function run() {
     const translationHistoryCollection = deltaTranslateDB.collection(
       "translationHistoryCollection"
     );
-    // const favoriteHistoryCollection = client
-    //   .db("deltaTranslateDB")
-    //   .collection("favoriteHistory");
+    const favoriteHistoryCollection = client
+      .db("deltaTranslateDB")
+      .collection("favoriteHistory");
 
     const usersCollection = client.db("deltaTranslateDB").collection("users");
 
@@ -113,66 +113,66 @@ async function run() {
 
     // favorite History API
 
-    // app.get("/favoriteHistory", async (req, res) => {
-    //   const email = req.query.userEmail;
-    //   const query = { userEmail: email };
-    //   const result = await favoriteHistoryCollection.findOne(query);
-    //   res.send(result);
-    // });
+    app.get("/favoriteHistory", async (req, res) => {
+      const email = req.query.userEmail;
+      const query = { userEmail: email };
+      const result = await favoriteHistoryCollection.findOne(query);
+      res.send(result);
+    });
 
-    // app.put("/favoriteHistory/:status", async (req, res) => {
-    //   try {
-    //     const FavHistory = req.body;
-    //     const status = req.params.status;
-    //     // console.log(FavHistory);
-    //     const filter = { userEmail: FavHistory.userEmail };
-    //     const existingUser = await favoriteHistoryCollection.findOne(filter);
-    //     // console.log(existingUser);
+    app.put("/favoriteHistory/:status", async (req, res) => {
+      try {
+        const FavHistory = req.body;
+        const status = req.params.status;
+        // console.log(FavHistory);
+        const filter = { userEmail: FavHistory.userEmail };
+        const existingUser = await favoriteHistoryCollection.findOne(filter);
+        // console.log(existingUser);
 
-    //     if (existingUser) {
-    //       let latestFavH = [...existingUser.FavHistory];
+        if (existingUser) {
+          let latestFavH = [...existingUser.FavHistory];
 
-    //       if (status === "add") {
-    //         latestFavH.unshift(FavHistory.FavHistory[0]);
+          if (status === "add") {
+            latestFavH.unshift(FavHistory.FavHistory[0]);
 
-    //         // console.log(latestFavH);
+            // console.log(latestFavH);
 
-    //         const updatedDoc = {
-    //           $set: {
-    //             FavHistory: latestFavH,
-    //           },
-    //         };
+            const updatedDoc = {
+              $set: {
+                FavHistory: latestFavH,
+              },
+            };
 
-    //         const updateResult = await favoriteHistoryCollection.updateOne(
-    //           filter,
-    //           updatedDoc
-    //         );
-    //         res.send(updateResult);
-    //       } else {
-    //         const deletedHistory = latestFavH.filter(
-    //           (item) => item.id !== FavHistory.FavHistory[0].id
-    //         );
+            const updateResult = await favoriteHistoryCollection.updateOne(
+              filter,
+              updatedDoc
+            );
+            res.send(updateResult);
+          } else {
+            const deletedHistory = latestFavH.filter(
+              (item) => item.id !== FavHistory.FavHistory[0].id
+            );
 
-    //         const updatedDoc = {
-    //           $set: {
-    //             FavHistory: deletedHistory,
-    //           },
-    //         };
+            const updatedDoc = {
+              $set: {
+                FavHistory: deletedHistory,
+              },
+            };
 
-    //         const updateResult = await favoriteHistoryCollection.updateOne(
-    //           filter,
-    //           updatedDoc
-    //         );
-    //         res.send(updateResult);
-    //       }
-    //     } else {
-    //       const result = await favoriteHistoryCollection.insertOne(FavHistory);
-    //       res.send(result);
-    //     }
-    //   } catch {
-    //     (error) => console.log(error);
-    //   }
-    // });
+            const updateResult = await favoriteHistoryCollection.updateOne(
+              filter,
+              updatedDoc
+            );
+            res.send(updateResult);
+          }
+        } else {
+          const result = await favoriteHistoryCollection.insertOne(FavHistory);
+          res.send(result);
+        }
+      } catch {
+        (error) => console.log(error);
+      }
+    });
 
     // users api
     app.post("/users", async (req, res) => {
