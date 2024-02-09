@@ -46,7 +46,9 @@ async function run() {
     const favoriteHistoryCollection = client
       .db("deltaTranslateDB")
       .collection("favoriteHistory");
-
+    const userFeedbackCollection = deltaTranslateDB.collection(
+      "userFeedbackCollection"
+    );
     const usersCollection = client.db("deltaTranslateDB").collection("users");
 
     // app.get("/translation-history", async (req, res) => {
@@ -189,6 +191,57 @@ async function run() {
         res.send(result);
       } catch {
         (error) => console.log(error);
+      }
+    });
+
+    // feedback Api
+    app.get("/user-feedback", async (req, res) => {
+      const result = await userFeedbackCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.put("/user-feedback/:email", async (req, res) => {
+      const email = req.params.email;
+      const updatedFeedback = req.body;
+
+      // console.log("hello");
+
+      const filter = { userEmail: email };
+      const existingUser = await userFeedbackCollection.findOne(filter);
+
+      // console.log(existingUser);
+
+      if (existingUser) {
+        let tempFeedback = [...existingUser.feedbackMessage];
+        tempFeedback.unshift(updatedFeedback.feedbackMessage[0]);
+        let tempCount = existingUser.count;
+
+        console.log(tempFeedback);
+        if (tempFeedback.length > 20) {
+          tempFeedback = tempFeedback.slice(0, 20);
+        }
+
+        // console.log(tempHistory);
+
+        const options = { upsert: true };
+        const updatedDoc = {
+          $set: {
+            feedbackMessage: tempFeedback,
+            count: tempCount + 1,
+          },
+        };
+        const updateResult = await userFeedbackCollection.updateOne(
+          filter,
+          updatedDoc,
+          options
+        );
+        res.send(updateResult);
+      } else {
+        updatedFeedback.count = 1;
+        const insertResult = await userFeedbackCollection.insertOne(
+          updatedFeedback
+        );
+        res.send(insertResult);
       }
     });
 
