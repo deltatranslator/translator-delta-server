@@ -200,6 +200,17 @@ async function run() {
       }
     });
 
+    // It's route for user profile
+    app.get("/user/api/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      console.log("=========>Email", email);
+      const result = await usersCollection.findOne(query);
+      console.log("=========>Result", result);
+
+      res.send(result);
+    });
+
     // feedback Api
     app.get("/user-feedback", async (req, res) => {
       const result = await userFeedbackCollection.find().toArray();
@@ -209,9 +220,7 @@ async function run() {
     app.put("/user-feedback/:email", async (req, res) => {
       const email = req.params.email;
       const updatedFeedback = req.body;
-
       // console.log("hello");
-
       const filter = { userEmail: email };
       const existingUser = await userFeedbackCollection.findOne(filter);
 
