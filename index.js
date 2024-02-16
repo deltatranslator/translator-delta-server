@@ -2,6 +2,10 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
+const multer = require('multer');
+const fs = require('fs');
+const pdfParse = require('pdf-parse');
+const { Translate } = require('@google-cloud/translate').v2;
 
 const port = process.env.PORT || 5001;
 
@@ -21,7 +25,11 @@ app.use(express.json());
 
 // backend link :   https://translator-delta-server.vercel.app/
 
+
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const PdfParse = require("pdf-parse");
+
 const uri =
   "mongodb+srv://delta-translator:hzWSRlIt0p80K7sK@cluster0.gspqc3c.mongodb.net/?retryWrites=true&w=majority";
 
@@ -33,6 +41,12 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+// Set up multer for file upload
+const upload = multer({ dest: 'uploads/' });
+
+// Set up Google Cloud Translation API
+const translate = new Translate();
 
 async function run() {
   try {
@@ -48,6 +62,7 @@ async function run() {
     //   .collection("favoriteHistory");
 
     const usersCollection = client.db("deltaTranslateDB").collection("users");
+    const pdfCollection = client.db("deltaTranslateDB").collection("pdf");
 
     // app.get("/translation-history", async (req, res) => {
     //   const result = await translationHistoryCollection.find().toArray();
@@ -103,6 +118,71 @@ async function run() {
         res.send(insertResult);
       }
     });
+
+
+    // Route for uploading a PDF file
+    // app.post('/upload', upload.single('pdf'), async (req, res) => {
+    //   try {
+    //     const file = req.body;
+    //     if (!file) {
+    //       return res.status(400).send('No file uploaded.');
+    //     }
+
+    //     const buffer = await PDFParser(file.path);
+    //     const text = buffer.toString();
+
+    //     // Perform translation
+    //     const [translation] = await translate.translate(text, 'es'); // Translate to Spanish for example
+
+    //     // Store original text and translation in MongoDB
+    //     await pdfCollection.insertOne({ originalText: text, translatedText: translation });
+
+    //     return res.status(200).send('File uploaded and translated successfully.');
+    //   } catch (error) {
+    //     console.error('Error uploading and translating file:', error);
+    //     return res.status(500).send('Internal server error.');
+    //   }
+    // });
+    //multer
+
+    // const storage = multer.diskStorage({
+    //   destination: function (req, file, cb) {
+    //     cb(null, './files')
+    //   },
+    //   filename: function (req, file, cb) {
+    //     const uniqueSuffix = Date.now()
+    //     cb(null, uniqueSuffix + file.originalname)
+    //   }
+    // })
+
+    // const upload = multer({ storage: storage });
+    // const upload = multer({ dest: 'uploads/' });
+
+
+    app.post('/extract-text', async (req, res) => {
+      // if (!req.files && !req.files.pdfFile) {
+      //   res.status(400);
+      //   res.end();
+      // }
+      // const result = await pdfParse(req?.files?.pdfFile)
+      // console.log(result)
+      const file = req.body;
+
+      console.log(file);
+
+    });
+
+    // app.post("/upload-files", upload.single("file"), async (req, res) => {
+    //   console.log(req.file);
+    //   const file = req.file;
+
+
+    //   PdfParse(pdfFile).then(function (data) {
+    //     console.log(data.numpages);
+    //   })
+    //   res.send("hii")
+    // })
+
 
     // favorite History API
 
@@ -167,10 +247,12 @@ async function run() {
     //   }
     // });
 
+
     // users api
     app.post("/users", async (req, res) => {
       try {
         const user = req.body;
+        console.log(user);
         //inserted email if user does not exists:
         //you can do this many ways (1.email unique , 2.upsert , 3.simple checking)
         const query = { email: user.email };
