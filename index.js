@@ -54,7 +54,7 @@ async function run() {
       .db("deltaTranslateDB")
       .collection("profile");
 
-    //=========== User Profile routes ========== \\
+    // =========== User Profile routes ========== \\
     app.post("/profile", async (req, res) => {
       try {
         const profile = req.body;
@@ -71,10 +71,10 @@ async function run() {
       res.send(result);
     });
 
-    // app.get("/translation-history", async (req, res) => {
-    //   const result = await translationHistoryCollection.find().toArray();
-    //   res.send(result);
-    // });
+    app.get("/translation-history", async (req, res) => {
+      const result = await translationHistoryCollection.find().toArray();
+      res.send(result);
+    });
 
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
