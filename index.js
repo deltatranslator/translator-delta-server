@@ -57,93 +57,44 @@ async function run() {
         const translationHistoryCollection = deltaTranslateDB.collection(
             "translationHistoryCollection"
         );
+        const favoriteHistoryCollection = client
+            .db("deltaTranslateDB")
+            .collection("favoriteHistory");
         const userFeedbackCollection = deltaTranslateDB.collection(
             "userFeedbackCollection"
         );
-        // const favoriteHistoryCollection = client
-        //   .db("deltaTranslateDB")
-        //   .collection("favoriteHistory");
+        const usersCollection = client.db("deltaTranslateDB").collection("users");
+        const usersProfileCollection = client
+            .db("deltaTranslateDB")
+            .collection("profile");
 
-
-        // Route for uploading a PDF file
-        // app.post('/upload', upload.single('pdf'), async (req, res) => {
-        //   try {
-        //     const file = req.body;
-        //     if (!file) {
-        //       return res.status(400).send('No file uploaded.');
-        //     }
-
-        //     const buffer = await PDFParser(file.path);
-        //     const text = buffer.toString();
-
-        //     // Perform translation
-        //     const [translation] = await translate.translate(text, 'es'); // Translate to Spanish for example
-
-        //     // Store original text and translation in MongoDB
-        //     await pdfCollection.insertOne({ originalText: text, translatedText: translation });
-
-        //     return res.status(200).send('File uploaded and translated successfully.');
-        //   } catch (error) {
-        //     console.error('Error uploading and translating file:', error);
-        //     return res.status(500).send('Internal server error.');
-        //   }
-        // });
-        //multer
-
-        // const storage = multer.diskStorage({
-        //   destination: function (req, file, cb) {
-        //     cb(null, './files')
-        //   },
-        //   filename: function (req, file, cb) {
-        //     const uniqueSuffix = Date.now()
-        //     cb(null, uniqueSuffix + file.originalname)
-        //   }
-        // })
-
-        // const upload = multer({ storage: storage });
-        // const upload = multer({ dest: 'uploads/' });
-
-
-        app.post('/extract-text', async (req, res) => {
-            // if (!req.files && !req.files.pdfFile) {
-            //   res.status(400);
-            //   res.end();
-            // }
-            // const result = await pdfParse(req?.files?.pdfFile)
-            // console.log(result)
-            const file = req.body;
-
-            console.log(file);
-
+        //=========== User Profile routes ========== \\
+        app.post("/profile", async (req, res) => {
+            try {
+                const profile = req.body;
+                const result = await usersProfileCollection.insertOne(profile);
+                res.send(result);
+            } catch (error) {
+                console.error("Error:", error);
+                res.status(500).json({ error: "Internal server error" });
+            }
         });
 
-        // app.post("/upload-files", upload.single("file"), async (req, res) => {
-        //   console.log(req.file);
-        //   const file = req.file;
-
-
-        //   PdfParse(pdfFile).then(function (data) {
-        //     console.log(data.numpages);
-        //   })
-        //   res.send("hii")
-        // })
-
-
-        // favorite History API
-        app.delete("/translation-history/:email", async (req, res) => {
-            const email = req.params.email;
-            const query = { userEmail: email };
-            const result = await translationHistoryCollection.deleteOne(query);
+        app.get("/profile", async (req, res) => {
+            const result = await usersProfileCollection.find().toArray();
             res.send(result);
         });
-
-        // favorite History API
-        const usersCollection = client.db("deltaTranslateDB").collection("users");
 
         // app.get("/translation-history", async (req, res) => {
         //   const result = await translationHistoryCollection.find().toArray();
         //   res.send(result);
         // });
+
+        app.get("/users", async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        });
+
         app.get("/translation-history/:email", async (req, res) => {
             const email = req.params.email;
             const query = { userEmail: email };
@@ -283,6 +234,16 @@ async function run() {
             }
         });
 
+        // It's route for user profile
+        app.get("/users/api/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            // console.log("=========>Email", email);
+            const result = await usersCollection.findOne(query);
+            // console.log("=========>Result", result);
+            res.send(result);
+        });
+
         // feedback Api
         app.get("/user-feedback", async (req, res) => {
             const result = await userFeedbackCollection.find().toArray();
@@ -292,9 +253,7 @@ async function run() {
         app.put("/user-feedback/:email", async (req, res) => {
             const email = req.params.email;
             const updatedFeedback = req.body;
-
             // console.log("hello");
-
             const filter = { userEmail: email };
             const existingUser = await userFeedbackCollection.findOne(filter);
 
