@@ -50,25 +50,26 @@ async function run() {
       "userFeedbackCollection"
     );
     const usersCollection = client.db("deltaTranslateDB").collection("users");
-    const usersProfileCollection = client
+    const profileCollection = client
       .db("deltaTranslateDB")
       .collection("profile");
     /****inbox api collections*****/
     const inboxCollection = client.db("deltaTranslateDB").collection("inbox");
     // =========== User Profile routes ========== \\
     app.post("/profile", async (req, res) => {
-      try {
-        const profile = req.body;
-        const result = await usersProfileCollection.insertOne(profile);
-        res.send(result);
-      } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
+      const profile = req.body;
+      const result = await profileCollection.insertOne(profile);
+      res.send(result);
     });
 
     app.get("/profile", async (req, res) => {
-      const result = await usersProfileCollection.find().toArray();
+      const result = await profileCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/profile/api/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await profileCollection.findOne({ email });
       res.send(result);
     });
 
