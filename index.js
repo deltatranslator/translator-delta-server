@@ -290,6 +290,10 @@ async function run() {
       const result = await inboxCollection.find().toArray();
       res.send(result);
     });
+    app.get("/inboxDetails/:id", async (req, res) => {
+      const result = await inboxCollection.findOne();
+      res.send(result);
+    });
     /********Inbox api*******/
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
