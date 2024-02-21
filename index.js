@@ -1,4 +1,5 @@
 const express = require("express");
+const { DateTime } = require("luxon");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
@@ -50,24 +51,26 @@ async function run() {
       "userFeedbackCollection"
     );
     const usersCollection = client.db("deltaTranslateDB").collection("users");
-    const usersProfileCollection = client
+    const profileCollection = client
       .db("deltaTranslateDB")
       .collection("profile");
-
+    /****inbox api collections*****/
+    const inboxCollection = client.db("deltaTranslateDB").collection("inbox");
     // =========== User Profile routes ========== \\
     app.post("/profile", async (req, res) => {
-      try {
-        const profile = req.body;
-        const result = await usersProfileCollection.insertOne(profile);
-        res.send(result);
-      } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
+      const profile = req.body;
+      const result = await profileCollection.insertOne(profile);
+      res.send(result);
     });
 
     app.get("/profile", async (req, res) => {
-      const result = await usersProfileCollection.find().toArray();
+      const result = await profileCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/profile/api/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await profileCollection.findOne({ email });
       res.send(result);
     });
 
@@ -279,6 +282,38 @@ async function run() {
       }
     });
 
+    /********Inbox api*******/
+    app.post("/inbox", async (req, res) => {
+      const inboxInfo = req.body;
+      // inboxInfo.date = DateTime.now().toLocaleString(DateTime.DATETIME_FULL);
+      inboxInfo.date = DateTime.now().toLocaleString({
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      const result = await inboxCollection.insertOne(inboxInfo);
+      res.send(result);
+    });
+    app.get("/inbox", async (req, res) => {
+      const result = await inboxCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/inboxDetails/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await inboxCollection.findOne(query);
+      res.send(result);
+    });
+    app.delete("/inbox/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await inboxCollection.deleteOne(query);
+      res.send(result);
+    });
+    /********Inbox api*******/
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
