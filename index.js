@@ -307,6 +307,12 @@ async function run() {
       const result = await inboxCollection.findOne(query);
       res.send(result);
     });
+    app.delete("/inbox/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await inboxCollection.deleteOne(query);
+      res.send(result);
+    });
     /********Inbox api*******/
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
