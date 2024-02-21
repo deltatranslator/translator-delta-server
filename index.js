@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
 
 const port = process.env.PORT || 5001;
 
@@ -18,8 +20,11 @@ app.use(express.json());
 
 // delta-translator
 //hzWSRlIt0p80K7sK+
-
 // backend link :   https://translator-delta-server.vercel.app/
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
@@ -48,6 +53,51 @@ async function run() {
     //   .collection("favoriteHistory");
 
     const usersCollection = client.db("deltaTranslateDB").collection("users");
+    const profileCollection = client
+      .db("deltaTranslateDB")
+      .collection("profile");
+
+    //////////// Profile Collection For user dashboard start \\\\\\\\\\\
+
+    app.post("/profile", async (req, res) => {
+      const profile = req.body;
+      const result = await profileCollection.insertOne(profile);
+      res.send(result);
+    });
+
+    app.get("/profile", async (req, res) => {
+      const result = await profileCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/profile/api/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await profileCollection.findOne({ email });
+      res.send(result);
+    });
+
+    //////////// Profile Collection For user dashboard End \\\\\\\\\\\
+
+    // translation functionality
+    app.post("/api/translate", upload.single("file"), async (req, res) => {
+      try {
+        const translatedPDFBuffer = await translatePDF(req.file.buffer);
+
+        res.send({
+          "Content-Type": "application/pdf",
+          "Content-Disposition": 'attachment; filename="translated.pdf"',
+        });
+        res.send(translatedPDFBuffer);
+      } catch (error) {
+        console.log("translate error =======>", error);
+      }
+    });
+
+    // Dummy translation function
+    async function translatePDF(pdfBuffer) {
+      const pdfDoc = await PDFDocument.load(pdfBuffer);
+      return await pdfDoc.save();
+    }
 
     // app.get("/translation-history", async (req, res) => {
     //   const result = await translationHistoryCollection.find().toArray();
@@ -188,7 +238,7 @@ async function run() {
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
+      "Pinged your deployment. You successfully connected to MongoDB! 💀"
     );
   } finally {
     // Ensures that the client will close when you finish/error
@@ -198,8 +248,8 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("our delta translator is running fluently");
+  res.send("our delta translator is running fluently ☘️ 🌴 ");
 });
 app.listen(port, (req, res) => {
-  console.log(`Our translator is running on ${port}`);
+  console.log(`Our translator is running on ${port} 🥰`);
 });
