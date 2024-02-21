@@ -3,7 +3,6 @@ const app = express();
 require("dotenv").config();
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
 
 const port = process.env.PORT || 5001;
 
