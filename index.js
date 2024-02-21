@@ -286,6 +286,10 @@ async function run() {
       const result = await inboxCollection.insertOne(inboxInfo);
       res.send(result);
     });
+    app.get("/inbox", async (req, res) => {
+      const result = await inboxCollection.find().toArray();
+      res.send(result);
+    });
     /********Inbox api*******/
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
