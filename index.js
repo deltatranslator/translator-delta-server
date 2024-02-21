@@ -1,4 +1,5 @@
 const express = require("express");
+const { DateTime } = require("luxon");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
@@ -284,6 +285,15 @@ async function run() {
     /********Inbox api*******/
     app.post("/inbox", async (req, res) => {
       const inboxInfo = req.body;
+      // inboxInfo.date = DateTime.now().toLocaleString(DateTime.DATETIME_FULL);
+      inboxInfo.date = DateTime.now().toLocaleString({
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
       const result = await inboxCollection.insertOne(inboxInfo);
       res.send(result);
     });
@@ -292,7 +302,9 @@ async function run() {
       res.send(result);
     });
     app.get("/inboxDetails/:id", async (req, res) => {
-      const result = await inboxCollection.findOne();
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await inboxCollection.findOne(query);
       res.send(result);
     });
     /********Inbox api*******/
