@@ -53,7 +53,8 @@ async function run() {
     const usersProfileCollection = client
       .db("deltaTranslateDB")
       .collection("profile");
-
+    /****inbox api collections*****/
+    const inboxCollection = client.db("deltaTranslateDB").collection("inbox");
     // =========== User Profile routes ========== \\
     app.post("/profile", async (req, res) => {
       try {
@@ -279,6 +280,13 @@ async function run() {
       }
     });
 
+    /********Inbox api*******/
+    app.post("/inbox", async (req, res) => {
+      const inboxInfo = req.body;
+      const result = await inboxCollection.insertOne(inboxInfo);
+      res.send(result);
+    });
+    /********Inbox api*******/
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
