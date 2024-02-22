@@ -297,16 +297,29 @@ async function run() {
       const result = await inboxCollection.insertOne(inboxInfo);
       res.send(result);
     });
+
     app.get("/inbox", async (req, res) => {
-      const result = await inboxCollection.find().toArray();
-      res.send(result);
+      try {
+        // Sort the results by date in descending order
+        const result = await inboxCollection
+          .find()
+          .sort({ date: -1 })
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        // Handle any errors
+        console.error("Error fetching inbox data:", error);
+        res.status(500).send("Error fetching inbox data");
+      }
     });
+
     app.get("/inboxDetails/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await inboxCollection.findOne(query);
       res.send(result);
     });
+
     app.delete("/inbox/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
