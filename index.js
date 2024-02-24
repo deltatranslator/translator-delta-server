@@ -346,6 +346,58 @@ async function run() {
         console.log(
             "Pinged your deployment. You successfully connected to MongoDB!"
         );
+
+        //============== Dashboard api ===============//
+        app.patch("/admin-user-update/:email", async (req, res) => {
+            const email = req.params.email;
+            const updatedUser = req.body;
+            const filter = { email: email };
+            console.log(filter);
+            const existingUser = await usersCollection.findOne(filter);
+
+            console.log(existingUser);
+
+            if (existingUser) {
+
+                const options = { upsert: true };
+                const updatedDoc = {
+                    $set: {
+                        role: updatedUser.role,
+                        banState: updatedUser.banState
+                    },
+                };
+                const result = await usersCollection.updateOne(
+                    filter,
+                    updatedDoc,
+                    options
+                );
+                res.send(result);
+            }
+        });
+        app.get("/dashboard-stat", async (req, res) => {
+            // Total Users
+            const users = await usersCollection.find().toArray();
+            const userCount = await usersCollection.countDocuments();
+
+            // Recent Users
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            let RecentUsers = await usersCollection.find({ registrationDate: { $gte: thirtyDaysAgo } }).toArray();
+            RecentUsers = RecentUsers.length;
+
+            // Total Emails
+            const emailCount = await inboxCollection.countDocuments();
+
+            // Total Feedback
+            const feedback = await userFeedbackCollection.find().toArray();
+            let feedbackCount = 0;
+            feedback.map(feed => {
+                feedbackCount += feed.feedbackMessage.length;
+            })
+
+            res.send({ userCount, RecentUsers, emailCount, feedbackCount });
+        })
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
