@@ -67,6 +67,7 @@ async function run() {
         const usersProfileCollection = client
             .db("deltaTranslateDB")
             .collection("profile");
+        const banList = deltaTranslateDB.collection("banList");
 
         //=========== User Profile routes ========== \\
         app.post("/profile", async (req, res) => {
@@ -292,6 +293,48 @@ async function run() {
                 res.send(insertResult);
             }
         });
+
+        //============== Dashboard api ===============//
+        app.patch("/admin-user-update/:email", async (req, res) => {
+            const email = req.params.email;
+            const updatedUser = req.body;
+            const filter = { email: email };
+            console.log(filter);
+            const existingUser = await usersCollection.findOne(filter);
+
+            console.log(existingUser);
+
+            if (existingUser) {
+
+                const options = { upsert: true };
+                const updatedDoc = {
+                    $set: {
+                        role: updatedUser.role,
+                        banState: updatedUser.banState
+                    },
+                };
+                const result = await usersCollection.updateOne(
+                    filter,
+                    updatedDoc,
+                    options
+                );
+                res.send(result);
+            }
+        });
+        app.get("/dashboard-stat", async (req, res) => {
+            const users = await usersCollection.find().toArray();
+            const userCount = await usersCollection.countDocuments();
+
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            let RecentUsers = await usersCollection.find({ registrationDate: { $gte: thirtyDaysAgo } }).toArray();
+            RecentUsers = RecentUsers.length;
+
+            const emailCount = await inbox.countDocuments();
+
+            res.send({ userCount, RecentUsers, emailCount });
+        })
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
