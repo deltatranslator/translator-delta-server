@@ -1,4 +1,5 @@
 const express = require("express");
+const { DateTime } = require("luxon");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
@@ -57,98 +58,45 @@ async function run() {
         const translationHistoryCollection = deltaTranslateDB.collection(
             "translationHistoryCollection"
         );
+        const favoriteHistoryCollection = client
+            .db("deltaTranslateDB")
+            .collection("favoriteHistory");
         const userFeedbackCollection = deltaTranslateDB.collection(
             "userFeedbackCollection"
         );
-        // const favoriteHistoryCollection = client
-        //   .db("deltaTranslateDB")
-        //   .collection("favoriteHistory");
-
-
-    // Route for uploading a PDF file
-    // app.post('/upload', upload.single('pdf'), async (req, res) => {
-    //   try {
-    //     const file = req.body;
-    //     if (!file) {
-    //       return res.status(400).send('No file uploaded.');
-    //     }
-
-    //     const buffer = await PDFParser(file.path);
-    //     const text = buffer.toString();
-
-    //     // Perform translation
-    //     const [translation] = await translate.translate(text, 'es'); // Translate to Spanish for example
-
-    //     // Store original text and translation in MongoDB
-    //     await pdfCollection.insertOne({ originalText: text, translatedText: translation });
-
-    //     return res.status(200).send('File uploaded and translated successfully.');
-    //   } catch (error) {
-    //     console.error('Error uploading and translating file:', error);
-    //     return res.status(500).send('Internal server error.');
-    //   }
-    // });
-    //multer
-
-    // const storage = multer.diskStorage({
-    //   destination: function (req, file, cb) {
-    //     cb(null, './files')
-    //   },
-    //   filename: function (req, file, cb) {
-    //     const uniqueSuffix = Date.now()
-    //     cb(null, uniqueSuffix + file.originalname)
-    //   }
-    // })
-
-    // const upload = multer({ storage: storage });
-    // const upload = multer({ dest: 'uploads/' });
-
-
-    app.post('/extract-text', async (req, res) => {
-      // if (!req.files && !req.files.pdfFile) {
-      //   res.status(400);
-      //   res.end();
-      // }
-      // const result = await pdfParse(req?.files?.pdfFile)
-      // console.log(result)
-      const file = req.body;
-
-      console.log(file);
-
-    });
-
-    // app.post("/upload-files", upload.single("file"), async (req, res) => {
-    //   console.log(req.file);
-    //   const file = req.file;
-
-
-    //   PdfParse(pdfFile).then(function (data) {
-    //     console.log(data.numpages);
-    //   })
-    //   res.send("hii")
-    // })
-
-
-    // favorite History API
-        app.delete("/translation-history/:email", async (req, res) => {
-            const email = req.params.email;
-            const query = { userEmail: email };
-            const result = await translationHistoryCollection.deleteOne(query);
+        const usersCollection = client.db("deltaTranslateDB").collection("users");
+        const profileCollection = client
+            .db("deltaTranslateDB")
+            .collection("profile");
+        /****inbox api collections*****/
+        const inboxCollection = client.db("deltaTranslateDB").collection("inbox");
+        // =========== User Profile routes ========== \\
+        app.post("/profile", async (req, res) => {
+            const profile = req.body;
+            const result = await profileCollection.insertOne(profile);
             res.send(result);
         });
 
-        // favorite History API
-        const usersCollection = client.db("deltaTranslateDB").collection("users");
+        app.get("/profile", async (req, res) => {
+            const result = await profileCollection.find().toArray();
+            res.send(result);
+        });
 
-        // app.get("/translation-history", async (req, res) => {
-        //   const result = await translationHistoryCollection.find().toArray();
-        //   res.send(result);
-        // });
+        app.get("/profile/api/:email", async (req, res) => {
+            const email = req.params.email;
+            const result = await profileCollection.findOne({ email });
+            res.send(result);
+        });
+
+        app.get("/translation-history", async (req, res) => {
+            const result = await translationHistoryCollection.find().toArray();
+            res.send(result);
+        });
 
         app.get("/users", async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
-        })
+        });
 
         app.get("/translation-history/:email", async (req, res) => {
             const email = req.params.email;
@@ -175,7 +123,7 @@ async function run() {
                 let tempHistory = [...existingUser.translationHistory];
                 tempHistory.unshift(updatedTranslationHistory.translationHistory[0]);
 
-                if (tempHistory.length > 20) {
+                if (updatedTranslationHistory.translationHistory.length > 50) {
                     tempHistory = tempHistory.slice(0, 20);
                 }
 
@@ -201,7 +149,106 @@ async function run() {
             }
         });
 
-        app.get('/user-feedback', async (req, res) => {
+        app.delete("/translation-history/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { userEmail: email };
+            const result = await translationHistoryCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        // favorite History API
+
+        app.get("/favoriteHistory", async (req, res) => {
+            const email = req.query.userEmail;
+            const query = { userEmail: email };
+            const result = await favoriteHistoryCollection.findOne(query);
+            res.send(result);
+        });
+
+        app.put("/favoriteHistory/:status", async (req, res) => {
+            try {
+                const FavHistory = req.body;
+                const status = req.params.status;
+                // console.log(FavHistory);
+                const filter = { userEmail: FavHistory.userEmail };
+                const existingUser = await favoriteHistoryCollection.findOne(filter);
+                // console.log(existingUser);
+
+                if (existingUser) {
+                    let latestFavH = [...existingUser.FavHistory];
+
+                    if (status === "add") {
+                        latestFavH.unshift(FavHistory.FavHistory[0]);
+
+                        // console.log(latestFavH);
+
+                        const updatedDoc = {
+                            $set: {
+                                FavHistory: latestFavH,
+                            },
+                        };
+
+                        const updateResult = await favoriteHistoryCollection.updateOne(
+                            filter,
+                            updatedDoc
+                        );
+                        res.send(updateResult);
+                    } else {
+                        const deletedHistory = latestFavH.filter(
+                            (item) => item.id !== FavHistory.FavHistory[0].id
+                        );
+
+                        const updatedDoc = {
+                            $set: {
+                                FavHistory: deletedHistory,
+                            },
+                        };
+
+                        const updateResult = await favoriteHistoryCollection.updateOne(
+                            filter,
+                            updatedDoc
+                        );
+                        res.send(updateResult);
+                    }
+                } else {
+                    const result = await favoriteHistoryCollection.insertOne(FavHistory);
+                    res.send(result);
+                }
+            } catch {
+                (error) => console.log(error);
+            }
+        });
+
+        // users api
+        app.post("/users", async (req, res) => {
+            try {
+                const user = req.body;
+                //inserted email if user does not exists:
+                //you can do this many ways (1.email unique , 2.upsert , 3.simple checking)
+                const query = { email: user.email };
+                const existingUser = await usersCollection.findOne(query);
+                if (existingUser) {
+                    return res.send({ message: "user already exist", insertedId: null });
+                }
+                const result = await usersCollection.insertOne(user);
+                res.send(result);
+            } catch {
+                (error) => console.log(error);
+            }
+        });
+
+        // It's route for user profile
+        app.get("/users/api/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            // console.log("=========>Email", email);
+            const result = await usersCollection.findOne(query);
+            // console.log("=========>Result", result);
+            res.send(result);
+        });
+
+        // feedback Api
+        app.get("/user-feedback", async (req, res) => {
             const result = await userFeedbackCollection.find().toArray();
             res.send(result);
         });
@@ -209,9 +256,7 @@ async function run() {
         app.put("/user-feedback/:email", async (req, res) => {
             const email = req.params.email;
             const updatedFeedback = req.body;
-
             // console.log("hello");
-
             const filter = { userEmail: email };
             const existingUser = await userFeedbackCollection.findOne(filter);
 
@@ -243,7 +288,6 @@ async function run() {
                 );
                 res.send(updateResult);
             } else {
-
                 updatedFeedback.count = 1;
                 const insertResult = await userFeedbackCollection.insertOne(
                     updatedFeedback
@@ -252,92 +296,177 @@ async function run() {
             }
         });
 
-        // favorite History API
+        /********Inbox api*******/
+        app.post("/inbox", async (req, res) => {
+            const inboxInfo = req.body;
+            // inboxInfo.date = DateTime.now().toLocaleString(DateTime.DATETIME_FULL);
+            inboxInfo.date = DateTime.now().toLocaleString({
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+            });
+            const result = await inboxCollection.insertOne(inboxInfo);
+            res.send(result);
+        });
 
-        // app.get("/favoriteHistory", async (req, res) => {
-        //   const email = req.query.userEmail;
-        //   const query = { userEmail: email };
-        //   const result = await favoriteHistoryCollection.findOne(query);
-        //   res.send(result);
-        // });
-
-        // app.put("/favoriteHistory/:status", async (req, res) => {
-        //   try {
-        //     const FavHistory = req.body;
-        //     const status = req.params.status;
-        //     // console.log(FavHistory);
-        //     const filter = { userEmail: FavHistory.userEmail };
-        //     const existingUser = await favoriteHistoryCollection.findOne(filter);
-        //     // console.log(existingUser);
-
-        //     if (existingUser) {
-        //       let latestFavH = [...existingUser.FavHistory];
-
-        //       if (status === "add") {
-        //         latestFavH.unshift(FavHistory.FavHistory[0]);
-
-        //         // console.log(latestFavH);
-
-        //         const updatedDoc = {
-        //           $set: {
-        //             FavHistory: latestFavH,
-        //           },
-        //         };
-
-        //         const updateResult = await favoriteHistoryCollection.updateOne(
-        //           filter,
-        //           updatedDoc
-        //         );
-        //         res.send(updateResult);
-        //       } else {
-        //         const deletedHistory = latestFavH.filter(
-        //           (item) => item.id !== FavHistory.FavHistory[0].id
-        //         );
-
-        //         const updatedDoc = {
-        //           $set: {
-        //             FavHistory: deletedHistory,
-        //           },
-        //         };
-
-        //         const updateResult = await favoriteHistoryCollection.updateOne(
-        //           filter,
-        //           updatedDoc
-        //         );
-        //         res.send(updateResult);
-        //       }
-        //     } else {
-        //       const result = await favoriteHistoryCollection.insertOne(FavHistory);
-        //       res.send(result);
-        //     }
-        //   } catch {
-        //     (error) => console.log(error);
-        //   }
-        // });
-
-        // users api
-        app.post("/users", async (req, res) => {
+        app.get("/inbox", async (req, res) => {
             try {
-                const user = req.body;
-                //inserted email if user does not exists:
-                //you can do this many ways (1.email unique , 2.upsert , 3.simple checking)
-                const query = { email: user.email };
-                const existingUser = await usersCollection.findOne(query);
-                if (existingUser) {
-                    return res.send({ message: "user already exist", insertedId: null });
-                }
-                const result = await usersCollection.insertOne(user);
+                // Sort the results by date in descending order
+                const result = await inboxCollection
+                    .find()
+                    .sort({ date: -1 })
+                    .toArray();
                 res.send(result);
-            } catch {
-                (error) => console.log(error);
+            } catch (error) {
+                // Handle any errors
+                console.error("Error fetching inbox data:", error);
+                res.status(500).send("Error fetching inbox data");
             }
         });
 
+        app.get("/inboxDetails/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await inboxCollection.findOne(query);
+            res.send(result);
+        });
+
+        app.delete("/inbox/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await inboxCollection.deleteOne(query);
+            res.send(result);
+        });
+        /********Inbox api*******/
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log(
             "Pinged your deployment. You successfully connected to MongoDB!"
         );
+
+        //============== Dashboard api ===============//
+        app.patch("/admin-user-update/:email", async (req, res) => {
+            const email = req.params.email;
+            const updatedUser = req.body;
+            const filter = { email: email };
+            console.log(filter);
+            const existingUser = await usersCollection.findOne(filter);
+
+            console.log(existingUser);
+
+            if (existingUser) {
+
+                const options = { upsert: true };
+                const updatedDoc = {
+                    $set: {
+                        role: updatedUser.role,
+                        banState: updatedUser.banState
+                    },
+                };
+                const result = await usersCollection.updateOne(
+                    filter,
+                    updatedDoc,
+                    options
+                );
+                res.send(result);
+            }
+        });
+
+        app.get("/dashboard-stat", async (req, res) => {
+            // Total Users
+            const users = await usersCollection.find().toArray();
+            const userCount = await usersCollection.countDocuments();
+
+            // Recent Users
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            let RecentUsers = await usersCollection.find({ registrationDate: { $gte: thirtyDaysAgo } }).toArray();
+            RecentUsers = RecentUsers.length;
+
+            // Total Emails
+            const emailCount = await inboxCollection.countDocuments();
+
+            // Total Feedback
+            const feedback = await userFeedbackCollection.find().toArray();
+            let feedbackCount = 0;
+            feedback.map(feed => {
+                feedbackCount += feed.feedbackMessage.length;
+            })
+
+            res.send({ userCount, RecentUsers, emailCount, feedbackCount });
+        })
+
+        app.get("/top-five-lang", async (req, res) => {
+
+            // const totalUsedLang = await translationHistoryCollection.find({}, { _id: 0, fieldName1: 1, fieldName2: 1 }).toArray();
+
+            const result = await translationHistoryCollection.aggregate([
+                {
+                    $unwind: "$translationHistory"
+                },
+                {
+                    $project: {
+                        langPair: {
+                            $concat: ["$translationHistory.sourceLang", "-", "$translationHistory.targetLang"]
+                        }
+                    }
+                }
+            ]).toArray();
+
+            const langPairArray = result.map(item => item.langPair);
+
+            const langPairCount = langPairArray.reduce((countMap, langPair) => {
+                // Increment count for each langPair or initialize to 1 if not present
+                countMap[langPair] = (countMap[langPair] || 0) + 1;
+                return countMap;
+            }, {});
+            const langPairCountArray = Object.entries(langPairCount).map(([langPair, languages]) => ({ langPair, languages }));
+
+            langPairCountArray.sort((a, b) => b.languages - a.languages);
+            const topFiveLang = langPairCountArray.slice(0, 5);
+
+            res.send(topFiveLang);
+        })
+
+        app.patch("/monthly-user-count/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+
+            console.log('hello');
+            const options = { upsert: true };
+            const updatedDoc = {
+                $inc: {
+                    userLoginCount: 1
+                }
+            };
+
+            const result = await usersCollection.updateOne(
+                filter,
+                updatedDoc,
+                options
+            );
+
+            res.send(result);
+        })
+
+        app.get("/monthly-user-count", async (req, res) => {
+            const sumResult = await usersCollection.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalLogins: { $sum: "$userLoginCount" }
+                    }
+                }
+            ]).toArray();
+
+            const totalLogin = sumResult.length > 0 ? sumResult[0].totalLogins : 0;
+
+            res.send({ totalLogin })
+        })
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
