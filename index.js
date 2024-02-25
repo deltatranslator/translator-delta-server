@@ -409,7 +409,6 @@ async function run() {
                 },
                 {
                     $project: {
-                        _id: 0,
                         langPair: {
                             $concat: ["$translationHistory.sourceLang", "-", "$translationHistory.targetLang"]
                         }
@@ -430,6 +429,42 @@ async function run() {
             const topFiveLang = langPairCountArray.slice(0, 5);
 
             res.send(topFiveLang);
+        })
+
+        app.patch("/monthly-user-count/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+
+            console.log('hello');
+            const options = { upsert: true };
+            const updatedDoc = {
+                $inc: {
+                    userLoginCount: 1
+                }
+            };
+
+            const result = await usersCollection.updateOne(
+                filter,
+                updatedDoc,
+                options
+            );
+
+            res.send(result);
+        })
+
+        app.get("/monthly-user-count", async (req, res) => {
+            const sumResult = await usersCollection.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalLogins: { $sum: "$userLoginCount" }
+                    }
+                }
+            ]).toArray();
+
+            const totalLogin = sumResult.length > 0 ? sumResult[0].totalLogins : 0;
+
+            res.send({ totalLogin })
         })
 
     } finally {
