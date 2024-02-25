@@ -374,6 +374,7 @@ async function run() {
                 res.send(result);
             }
         });
+
         app.get("/dashboard-stat", async (req, res) => {
             // Total Users
             const users = await usersCollection.find().toArray();
@@ -396,6 +397,39 @@ async function run() {
             })
 
             res.send({ userCount, RecentUsers, emailCount, feedbackCount });
+        })
+
+        app.get("/top-five-lang", async (req, res) => {
+
+            // const totalUsedLang = await translationHistoryCollection.find({}, { _id: 0, fieldName1: 1, fieldName2: 1 }).toArray();
+
+            const result = await translationHistoryCollection.aggregate([
+                {
+                    $unwind: "$translationHistory"
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        langPair: {
+                            $concat: ["$translationHistory.sourceLang", "-", "$translationHistory.targetLang"]
+                        }
+                    }
+                }
+            ]).toArray();
+
+            const langPairArray = result.map(item => item.langPair);
+
+            const langPairCount = langPairArray.reduce((countMap, langPair) => {
+                // Increment count for each langPair or initialize to 1 if not present
+                countMap[langPair] = (countMap[langPair] || 0) + 1;
+                return countMap;
+            }, {});
+            const langPairCountArray = Object.entries(langPairCount).map(([langPair, languages]) => ({ langPair, languages }));
+
+            langPairCountArray.sort((a, b) => b.languages - a.languages);
+            const topFiveLang = langPairCountArray.slice(0, 5);
+
+            res.send(topFiveLang);
         })
 
     } finally {
