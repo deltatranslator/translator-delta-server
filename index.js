@@ -267,6 +267,16 @@ async function run() {
                 tempFeedback.unshift(updatedFeedback.feedbackMessage[0]);
                 let tempCount = existingUser.count;
 
+                const sumSatisfaction = tempFeedback.reduce((total, feedback) => {
+                    return total + feedback.satisfaction;
+                }, 0);
+
+                console.log('avg', tempFeedback.length);
+                console.log('avg', sumSatisfaction);
+
+                const avgSatisfaction = sumSatisfaction / tempFeedback.length;
+
+                console.log('avg', avgSatisfaction);
                 console.log(tempFeedback);
                 if (tempFeedback.length > 20) {
                     tempFeedback = tempFeedback.slice(0, 20);
@@ -279,6 +289,7 @@ async function run() {
                     $set: {
                         feedbackMessage: tempFeedback,
                         count: tempCount + 1,
+                        avgSatisfaction: avgSatisfaction,
                     },
                 };
                 const updateResult = await userFeedbackCollection.updateOne(
@@ -289,6 +300,7 @@ async function run() {
                 res.send(updateResult);
             } else {
                 updatedFeedback.count = 1;
+                updatedFeedback.avgSatisfaction = updatedFeedback.feedbackMessage[0].satisfaction;
                 const insertResult = await userFeedbackCollection.insertOne(
                     updatedFeedback
                 );
@@ -462,6 +474,101 @@ async function run() {
 
             res.send({ totalLogin })
         })
+
+        app.get("/avg-rating-per-month", async (req, res) => {
+
+            const feedback = await userFeedbackCollection.find().toArray();
+
+            let dateArr = [];
+            feedback.forEach(item => {
+                item.feedbackMessage.forEach(message => {
+                    dateArr.push({ date: message.feedbackDate, rating: message.satisfaction });
+                });
+            });
+
+            const separatedDates = [];
+
+            dateArr.forEach(timestamp => {
+                const date = new Date(parseInt(timestamp.date));
+                const month = date.getMonth() + 1;
+                const year = date.getFullYear();
+                const monthKey = `${year}-${month}`;
+
+                if (!separatedDates[monthKey]) {
+                    separatedDates[monthKey] = [];
+                }
+
+                separatedDates[monthKey].push(timestamp);
+            });
+
+            let monthlyAverages = {};
+
+            // Calculate average rating for each month
+            for (const [monthYear, ratings] of Object.entries(separatedDates)) {
+                let sum = 0;
+                let count = 0;
+
+                for (const { rating } of ratings) {
+                    sum += rating;
+                    count++;
+                }
+
+                monthlyAverages[monthYear] = sum / count;
+            }
+
+            // const separatedDatesArr = Object.entries(separatedDates).map(([key, value]) => ({ key, ...value }));
+
+            // separatedDatesArr.sort((a, b) => {
+            //     const keyA = Object.keys(a)[0];
+            //     const keyB = Object.keys(b)[0];
+
+            //     // Compare keys
+            //     if (keyA < keyB) {
+            //         return -1;
+            //     } else if (keyA > keyB) {
+            //         return 1;
+            //     } else {
+            //         return 0;
+            //     }
+            // });
+
+            // console.log(separatedDatesArr);
+
+            res.send(monthlyAverages);
+        });
+
+        app.get("/total-reviews", async (req, res) => {
+
+            const feedback = await userFeedbackCollection.find().toArray();
+            console.log(feedback);
+
+            let dateArr = [];
+            feedback.forEach(item => {
+                item.feedbackMessage.forEach(message => {
+                    dateArr.push(message.feedbackDate);
+                });
+            });
+
+            const separatedDates = {};
+            dateArr.forEach(timestamp => {
+                const date = new Date(parseInt(timestamp));
+                const month = date.getMonth() + 1;
+                const year = date.getFullYear();
+                const monthKey = `${year}-${month}`;
+
+                if (!separatedDates[monthKey]) {
+                    separatedDates[monthKey] = [];
+                }
+
+                separatedDates[monthKey].push(timestamp);
+            });
+
+            res.send(separatedDates);
+        });
+
+
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
