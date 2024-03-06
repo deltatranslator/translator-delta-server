@@ -66,9 +66,163 @@ async function run() {
     const profileCollection = client
       .db("deltaTranslateDB")
       .collection("profile");
-    /****inbox api collections*****/
     const inboxCollection = client.db("deltaTranslateDB").collection("inbox");
-    // =========== User Profile routes ========== \\
+
+  
+    //==========  User profile updated Start ========== \\
+    // Updated a user address
+    app.put("/users/address/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          address: user.address,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Updated a user work
+    app.put("/users/work/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          work: user.work,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Updated a user home
+    app.put("/users/home/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          home: user.home,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Updated a user number
+    app.put("/users/number/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          number: user.number,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Updated a user mail
+    app.put("/users/mail/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          email: user.email,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    app.put("/users/gender/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          gender: user.gender,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Updated a user birthday
+    app.put("/users/birthday/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          date: user.date,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // Updated a user name
+    app.put("/users/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          name: user.name,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    //==========  User profile updated End ========== \\
+
     app.post("/profile", async (req, res) => {
       const profile = req.body;
       const result = await profileCollection.insertOne(profile);
@@ -239,9 +393,7 @@ async function run() {
     app.get("/users/api/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
-      // console.log("=========>Email", email);
       const result = await usersCollection.findOne(query);
-      // console.log("=========>Result", result);
       res.send(result);
     });
 
