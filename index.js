@@ -55,163 +55,9 @@ async function run() {
     const profileCollection = client
       .db("deltaTranslateDB")
       .collection("profile");
+    /****inbox api collections*****/
     const inboxCollection = client.db("deltaTranslateDB").collection("inbox");
-
-  
-    //==========  User profile updated Start ========== \\
-    // Updated a user address
-    app.put("/users/address/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          address: user.address,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    // Updated a user work
-    app.put("/users/work/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          work: user.work,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    // Updated a user home
-    app.put("/users/home/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          home: user.home,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    // Updated a user number
-    app.put("/users/number/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          number: user.number,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    // Updated a user mail
-    app.put("/users/mail/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          email: user.email,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    app.put("/users/gender/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          gender: user.gender,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    // Updated a user birthday
-    app.put("/users/birthday/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          date: user.date,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    // Updated a user name
-    app.put("/users/:id", async (req, res) => {
-      const user = req.body;
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          name: user.name,
-        },
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
-    });
-
-    //==========  User profile updated End ========== \\
-
+    // =========== User Profile routes ========== \\
     app.post("/profile", async (req, res) => {
       const profile = req.body;
       const result = await profileCollection.insertOne(profile);
@@ -410,6 +256,20 @@ async function run() {
         if (tempFeedback.length > 20) {
           tempFeedback = tempFeedback.slice(0, 20);
         }
+        const sumSatisfaction = tempFeedback.reduce((total, feedback) => {
+          return total + feedback.satisfaction;
+        }, 0);
+
+        console.log("avg", tempFeedback.length);
+        console.log("avg", sumSatisfaction);
+
+        const avgSatisfaction = sumSatisfaction / tempFeedback.length;
+
+        console.log("avg", avgSatisfaction);
+        console.log(tempFeedback);
+        if (tempFeedback.length > 20) {
+          tempFeedback = tempFeedback.slice(0, 20);
+        }
 
         // console.log(tempHistory);
 
@@ -418,6 +278,7 @@ async function run() {
           $set: {
             feedbackMessage: tempFeedback,
             count: tempCount + 1,
+            avgSatisfaction: avgSatisfaction,
           },
         };
         const updateResult = await userFeedbackCollection.updateOne(
@@ -428,12 +289,61 @@ async function run() {
         res.send(updateResult);
       } else {
         updatedFeedback.count = 1;
+        updatedFeedback.avgSatisfaction =
+          updatedFeedback.feedbackMessage[0].satisfaction;
         const insertResult = await userFeedbackCollection.insertOne(
           updatedFeedback
         );
         res.send(insertResult);
       }
     });
+
+    /********Inbox api*******/
+    app.post("/inbox", async (req, res) => {
+      const inboxInfo = req.body;
+      // inboxInfo.date = DateTime.now().toLocaleString(DateTime.DATETIME_FULL);
+      inboxInfo.date = DateTime.now().toLocaleString({
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      const result = await inboxCollection.insertOne(inboxInfo);
+      res.send(result);
+    });
+
+    app.get("/inbox", async (req, res) => {
+      try {
+        // Sort the results by date in descending order
+        const result = await inboxCollection
+          .find()
+          .sort({ date: -1 })
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        // Handle any errors
+        console.error("Error fetching inbox data:", error);
+        res.status(500).send("Error fetching inbox data");
+      }
+    });
+
+    app.get("/inboxDetails/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await inboxCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.delete("/inbox/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await inboxCollection.deleteOne(query);
+      res.send(result);
+    });
+    /********Inbox api*******/
+
     //============== Dashboard api ===============//
     app.patch("/admin-user-update/:email", async (req, res) => {
       const email = req.params.email;
@@ -563,51 +473,99 @@ async function run() {
 
       res.send({ totalLogin });
     });
-    /********Inbox api*******/
-    app.post("/inbox", async (req, res) => {
-      const inboxInfo = req.body;
-      // inboxInfo.date = DateTime.now().toLocaleString(DateTime.DATETIME_FULL);
-      inboxInfo.date = DateTime.now().toLocaleString({
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
+
+    app.get("/avg-rating-per-month", async (req, res) => {
+      const feedback = await userFeedbackCollection.find().toArray();
+
+      let dateArr = [];
+      feedback.forEach((item) => {
+        item.feedbackMessage.forEach((message) => {
+          dateArr.push({
+            date: message.feedbackDate,
+            rating: message.satisfaction,
+          });
+        });
       });
-      const result = await inboxCollection.insertOne(inboxInfo);
-      res.send(result);
-    });
 
-    app.get("/inbox", async (req, res) => {
-      try {
-        // Sort the results by date in descending order
-        const result = await inboxCollection
-          .find()
-          .sort({ date: -1 })
-          .toArray();
-        res.send(result);
-      } catch (error) {
-        // Handle any errors
-        console.error("Error fetching inbox data:", error);
-        res.status(500).send("Error fetching inbox data");
+      const separatedDates = [];
+
+      dateArr.forEach((timestamp) => {
+        const date = new Date(parseInt(timestamp.date));
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        const monthKey = `${year}-${month}`;
+
+        if (!separatedDates[monthKey]) {
+          separatedDates[monthKey] = [];
+        }
+
+        separatedDates[monthKey].push(timestamp);
+      });
+
+      let monthlyAverages = {};
+
+      // Calculate average rating for each month
+      for (const [monthYear, ratings] of Object.entries(separatedDates)) {
+        let sum = 0;
+        let count = 0;
+
+        for (const { rating } of ratings) {
+          sum += rating;
+          count++;
+        }
+
+        monthlyAverages[monthYear] = sum / count;
       }
+
+      // const separatedDatesArr = Object.entries(separatedDates).map(([key, value]) => ({ key, ...value }));
+
+      // separatedDatesArr.sort((a, b) => {
+      //     const keyA = Object.keys(a)[0];
+      //     const keyB = Object.keys(b)[0];
+
+      //     // Compare keys
+      //     if (keyA < keyB) {
+      //         return -1;
+      //     } else if (keyA > keyB) {
+      //         return 1;
+      //     } else {
+      //         return 0;
+      //     }
+      // });
+
+      // console.log(separatedDatesArr);
+
+      res.send(monthlyAverages);
     });
 
-    app.get("/inboxDetails/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await inboxCollection.findOne(query);
-      res.send(result);
+    app.get("/total-reviews", async (req, res) => {
+      const feedback = await userFeedbackCollection.find().toArray();
+      console.log(feedback);
+
+      let dateArr = [];
+      feedback.forEach((item) => {
+        item.feedbackMessage.forEach((message) => {
+          dateArr.push(message.feedbackDate);
+        });
+      });
+
+      const separatedDates = {};
+      dateArr.forEach((timestamp) => {
+        const date = new Date(parseInt(timestamp));
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        const monthKey = `${year}-${month}`;
+
+        if (!separatedDates[monthKey]) {
+          separatedDates[monthKey] = [];
+        }
+
+        separatedDates[monthKey].push(timestamp);
+      });
+
+      res.send(separatedDates);
     });
 
-    app.delete("/inbox/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await inboxCollection.deleteOne(query);
-      res.send(result);
-    });
-    /********Inbox api*******/
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
