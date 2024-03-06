@@ -3,10 +3,6 @@ const { DateTime } = require("luxon");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const multer = require("multer");
-const fs = require("fs");
-const pdfParse = require("pdf-parse");
-const { Translate } = require("@google-cloud/translate").v2;
 
 const port = process.env.PORT || 5001;
 
@@ -27,7 +23,6 @@ app.use(express.json());
 // backend link :   https://translator-delta-server.vercel.app/
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const PdfParse = require("pdf-parse");
 
 const uri =
   "mongodb+srv://delta-translator:hzWSRlIt0p80K7sK@cluster0.gspqc3c.mongodb.net/?retryWrites=true&w=majority";
@@ -40,12 +35,6 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-
-// Set up multer for file upload
-const upload = multer({ dest: "uploads/" });
-
-// Set up Google Cloud Translation API
-const translate = new Translate();
 
 async function run() {
   try {
