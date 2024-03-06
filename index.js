@@ -405,7 +405,6 @@ async function run() {
         tempFeedback.unshift(updatedFeedback.feedbackMessage[0]);
         let tempCount = existingUser.count;
 
-        console.log(tempFeedback);
         if (tempFeedback.length > 20) {
           tempFeedback = tempFeedback.slice(0, 20);
         }
@@ -651,30 +650,11 @@ async function run() {
         monthlyAverages[monthYear] = sum / count;
       }
 
-      // const separatedDatesArr = Object.entries(separatedDates).map(([key, value]) => ({ key, ...value }));
-
-      // separatedDatesArr.sort((a, b) => {
-      //     const keyA = Object.keys(a)[0];
-      //     const keyB = Object.keys(b)[0];
-
-      //     // Compare keys
-      //     if (keyA < keyB) {
-      //         return -1;
-      //     } else if (keyA > keyB) {
-      //         return 1;
-      //     } else {
-      //         return 0;
-      //     }
-      // });
-
-      // console.log(separatedDatesArr);
-
       res.send(monthlyAverages);
     });
 
     app.get("/total-reviews", async (req, res) => {
       const feedback = await userFeedbackCollection.find().toArray();
-      console.log(feedback);
 
       let dateArr = [];
       feedback.forEach((item) => {
